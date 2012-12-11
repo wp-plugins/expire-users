@@ -110,7 +110,7 @@ class Expire_User {
 	 * If expire date is set and in past...
 	 */
 	function maybe_expire() {
-		if ( $expire_timestamp && time() > $expire_timestamp ) {
+		if ( $this->expire_timestamp && time() > $this->expire_timestamp ) {
 			$this->expire();
 		}
 	}
@@ -120,28 +120,7 @@ class Expire_User {
 	 */
 	function expire() {
 		update_user_meta( $this->user_id, '_expire_user_expired', 'Y' );
-		
-		// Change role?
-		if ( $this->on_expire_default_to_role ) {
-			if ( get_role( $this->on_expire_default_to_role ) ) {
-				$u = new WP_User( $this->user_id );
-				$u->set_role( $this->on_expire_default_to_role );
-			}
-		}
-		
-		// Generate random password?
-		if ( $this->on_expire_user_reset_password ) {
-			$password = wp_generate_password( 12, false );
-			wp_set_password( $password, $this->user_id );
-		}
-		
-		// Send notification email?
-		if ( $this->on_expire_user_email ) {
-		}
-		
-		// Send admin notification email?
-		if ( $this->on_expire_user_email_admin ) {
-		}
+		do_action( 'expire_users_expired', $this );
 	}
 	
 	/**
