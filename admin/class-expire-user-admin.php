@@ -48,9 +48,9 @@ class Expire_User_Admin {
 			$expire_date = get_user_meta( $user_id, '_expire_user_date', true );
 			$expired = get_user_meta( $user_id, '_expire_user_expired', true );
 			if ( $expired ) {
-				$value = date( 'M d, Y @ H:i', $expire_date );
+				$value = date( get_option( 'date_format' ) . ' @ ' . get_option( 'time_format' ), $expire_date );
 				if ( $expired == 'Y' ) {
-					$value = date( 'M d, Y', $expire_date );
+					$value = date( get_option( 'date_format' ), $expire_date );
 					$value = '<strong>' . $value . '</strong> <em>' . __( '(expired)', 'expire-users' ) . '</em>';
 				}
 			}
@@ -94,16 +94,16 @@ class Expire_User_Admin {
 		$radio_date       = '';
 		$days_n           = 7;
 		$date_in_block    = 'days';
-		$expire_timestamp = time() + ( 60 * 60 * 24 * 7 );
+		$expire_timestamp = current_time( 'timestamp' ) + ( 60 * 60 * 24 * 7 );
 		$month_n          = '';
 		if ( isset( $expire_user->expire_timestamp ) && is_numeric( $expire_user->expire_timestamp ) ) {
 			$radio_date = checked( true, true, false );
-			$days_n2 = floor( ( $expire_user->expire_timestamp - time() ) / 60 / 60 / 24 );
+			$days_n2 = floor( ( $expire_user->expire_timestamp - current_time( 'timestamp' ) ) / 60 / 60 / 24 );
 			if ( $days_n2 > 0 ) {
 				$days_n = $days_n2;
 			}
 			$expire_timestamp = $expire_user->expire_timestamp;
-			$days_n = ceil( ( $expire_timestamp - time() ) / 60 / 60 / 24 );
+			$days_n = ceil( ( $expire_timestamp - current_time( 'timestamp' ) ) / 60 / 60 / 24 );
 			if ( $days_n % 7 == 0 ) {
 				$days_n = $days_n / 7;
 				$date_in_block = 'weeks';
@@ -182,6 +182,10 @@ class Expire_User_Admin {
 							<label for="expire_user_email_admin">
 								<input name="expire_user_email_admin" type="checkbox" id="expire_user_email_admin" value="Y" <?php checked( $expire_user->on_expire_user_email_admin ); ?>>
 								<?php _e( 'send notification email to admin', 'expire-users' ); ?> - <a href="<?php echo admin_url( 'users.php?page=expire_users' ); ?>"><?php _e( 'configure message', 'expire-users' ); ?></a>
+							</label><br>
+							<label for="expire_user_remove_expiry">
+								<input name="expire_user_remove_expiry" type="checkbox" id="expire_user_remove_expiry" value="Y" <?php checked( $expire_user->on_expire_user_remove_expiry ); ?>>
+								<?php _e( 'remove expiry details and allow user to continue to login', 'expire-users' ); ?>
 							</label>
 						</fieldset>
 					</td>
@@ -258,5 +262,3 @@ class Expire_User_Admin {
 	}
 	
 }
-
-?>

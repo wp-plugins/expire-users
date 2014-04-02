@@ -55,10 +55,11 @@ class Expire_User_Settings {
 			'expire_user_reset_password'   => 'N',
 			'expire_user_email'            => 'N',
 			'expire_user_email_admin'      => 'N',
+			'expire_user_remove_expiry'    => 'N',
 			'expire_user_date_type'        => 'never',
 			'expire_user_date_in_num'      => 10,
 			'expire_user_date_in_block'    => 'days',
-			'expire_timestamp'             => time(),
+			'expire_timestamp'             => current_time( 'timestamp' ),
 			'auto_expire_registered_users' => 'N'
 		);
 		$settings = wp_parse_args( get_option( 'expire_users_default_expire_settings', $default_settings ), $default_settings );
@@ -139,11 +140,7 @@ class Expire_User_Settings {
 						<td>
 							<select name="expire_users_default_expire_settings[expire_user_role]" id="expire_user_role">
 								<option value="" <?php selected( '', $expire_settings['expire_user_role'] ); ?>><?php _e( 'Don\'t change role', 'expire-users' ); ?></option>
-								<option value="editor" <?php selected( 'editor', $expire_settings['expire_user_role'] ); ?>><?php _e( 'Editor', 'expire-users' ); ?></option>
-								<option value="administrator" <?php selected( 'administrator', $expire_settings['expire_user_role'] ); ?>><?php _e( 'Administrator', 'expire-users' ); ?></option>
-								<option value="author" <?php selected( 'author', $expire_settings['expire_user_role'] ); ?>><?php _e( 'Author', 'expire-users' ); ?></option>
-								<option value="contributor" <?php selected( 'contributor', $expire_settings['expire_user_role'] ); ?>><?php _e( 'Contributor', 'expire-users' ); ?></option>
-								<option value="subscriber" <?php selected( 'subscriber', $expire_settings['expire_user_role'] ); ?>><?php _e( 'Subscriber', 'expire-users' ); ?></option>
+								<?php wp_dropdown_roles( $expire_settings['expire_user_role'] ); ?>
 							</select>
 						</td>
 					</tr>
@@ -163,6 +160,10 @@ class Expire_User_Settings {
 								<label for="expire_user_email_admin">
 									<input name="expire_users_default_expire_settings[expire_user_email_admin]" type="checkbox" id="expire_user_email_admin" value="Y" <?php checked( 'Y', $expire_settings['expire_user_email_admin'] ); ?>>
 									<?php _e( 'send notification email to admin', 'expire-users' ); ?>
+								</label><br>
+								<label for="expire_user_remove_expiry">
+									<input name="expire_users_default_expire_settings[expire_user_remove_expiry]" type="checkbox" id="expire_user_remove_expiry" value="Y" <?php checked( 'Y', $expire_settings['expire_user_remove_expiry'] ); ?>>
+									<?php _e( 'remove expiry details and allow user to continue to login', 'expire-users' ); ?>
 								</label>
 							</fieldset>
 						</td>
@@ -195,5 +196,3 @@ class Expire_User_Settings {
 	}
 	
 }
-
-?>

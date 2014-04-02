@@ -19,6 +19,7 @@ class Expire_Users {
 		add_action( 'expire_users_expired', array( $this, 'handle_on_expire_user_reset_password' ) );
 		add_action( 'expire_users_expired', array( $this, 'handle_on_expire_user_email' ) );
 		add_action( 'expire_users_expired', array( $this, 'handle_on_expire_user_email_admin' ) );
+		add_action( 'expire_users_expired', array( $this, 'handle_on_expire_user_remove_expiry' ) );
 		add_filter( 'expire_users_email_notification_message', array( $this, 'email_notification_filter' ), 20, 2 );
 		add_filter( 'expire_users_email_admin_notification_message', array( $this, 'email_notification_filter' ), 20, 2 );
 		add_filter( 'expire_users_email_notification_subject', array( $this, 'email_notification_filter' ), 20, 2 );
@@ -53,7 +54,8 @@ class Expire_Users {
 				'expire_user_role'              => $expire_settings['expire_user_role'],
 				'expire_user_reset_password'    => $expire_settings['expire_user_reset_password'],
 				'expire_user_email'             => $expire_settings['expire_user_email'],
-				'expire_user_email_admin'       => $expire_settings['expire_user_email_admin']
+				'expire_user_email_admin'       => $expire_settings['expire_user_email_admin'],
+				'expire_user_remove_expiry'       => $expire_settings['expire_user_remove_expiry']
 			);
 			
 			$user = new Expire_User( $user_id );
@@ -112,17 +114,47 @@ class Expire_Users {
 	}
 	
 	/**
+	 * Remove expiry details and continue to allow login when user expires?
+	 */
+	function handle_on_expire_user_remove_expiry( $expired_user ) {
+		if ( $expired_user->on_expire_user_remove_expiry ) {
+			$expired_user->remove_expire_date();
+			$expired_user->save_user();
+		}
+	}
+	
+	/**
 	 * Email notification filter
 	 */
 	function email_notification_filter( $message, $expired_user ) {
 		$u = new WP_User( $expired_user->user_id );
-		$message = str_replace( '%%name%%', trim( $u->user_nicename . ' ' . $u->last_name ), $message );
+		$message = str_replace( '%%name%%', $this->get_user_display_name( $u ), $message );
 		$message = str_replace( '%%username%%', $u->user_login, $message );
 		$message = str_replace( '%%expirydate%%', date( 'jS F Y @ h:i', $expired_user->expire_timestamp ), $message );
 		$message = str_replace( '%%sitename%%', get_bloginfo( 'name' ), $message );
 		return $message;
 	}
-	
+
+	/**
+	 * Get User Display Name
+	 *
+	 * Tries to retrieve user's real name, otherwise their display name.
+	 * Defaults to username if neither exist.
+	 *
+	 * @since  0.7
+	 *
+	 * @param   object  $user  WP_User object.
+	 * @return  string         Display name.
+	 */
+	function get_user_display_name( $user ) {
+		if ( ! empty( $user->first_name ) ) {
+			return trim( $user->first_name . ' ' . $user->last_name );
+		} elseif ( ! empty( $user->user_nicename ) ) {
+			return $user->user_nicename;
+		}
+		return $user->user_login;
+	}
+
 	function default_expire_users_notification_message( $value ) {
 		if ( empty( $value ) ) {
 			$value = __( 'Your access to %%sitename%% has expired.', 'expire-users' );
@@ -175,5 +207,3 @@ class Expire_Users {
 	}
 		
 }
-
-?>

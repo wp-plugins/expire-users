@@ -12,6 +12,7 @@ class Expire_User {
 	var $on_expire_user_reset_password = false;
 	var $on_expire_user_email = false;
 	var $on_expire_user_email_admin = false;
+	var $on_expire_user_remove_expiry = false;
 	
 	function Expire_User( $user_id = null ) {
 		if ( $user_id ) {
@@ -26,6 +27,8 @@ class Expire_User {
 				$this->on_expire_user_email = $expire_user_settings['email'];
 			if ( isset( $expire_user_settings['email_admin'] ) )
 				$this->on_expire_user_email_admin = $expire_user_settings['email_admin'];
+			if ( isset( $expire_user_settings['remove_expiry'] ) )
+				$this->on_expire_user_remove_expiry = $expire_user_settings['remove_expiry'];
 		}
 	}
 	
@@ -35,10 +38,10 @@ class Expire_User {
 	function set_expire_time_in_future( $amt, $unit = 'days' ) {
 		switch ( $unit ) {
 			case 'days':
-				$this->expire_timestamp = time() + ( 60 * 60 * 24 * $amt );
+				$this->expire_timestamp = current_time( 'timestamp' ) + ( 60 * 60 * 24 * $amt );
 				break;
 			case 'weeks':
-				$this->expire_timestamp = time() + ( 60 * 60 * 24 * 7 * $amt );
+				$this->expire_timestamp = current_time( 'timestamp' ) + ( 60 * 60 * 24 * 7 * $amt );
 				break;
 			case 'months':
 				$date = getdate();
@@ -73,29 +76,33 @@ class Expire_User {
 	function remove_expire_date() {
 		$this->expire_timestamp = null;
 	}
-	
+
 	/**
 	 * Get Expire Date Display
 	 *
 	 * @todo In up to 14 days, otherwise date
 	 */
-	function get_expire_date_display() {
+	function get_expire_date_display( $args = null ) {
+		$args = wp_parse_args( $args, array(
+			'date_format'    => _x(  get_option( 'date_format' ) . ' @ ' . get_option( 'time_format' ), 'display date format', 'expire-users' ),
+			'expires_format' => __( 'Expires: <strong>%s</strong>', 'expire-users' ),
+			'expired_format' => __( 'Expired: <strong>%s</strong>', 'expire-users' ),
+			'never_expire'   => __( 'Expire: <strong>never</strong>', 'expire-users' ),
+		) );
 		$date = '';
-		$time = '';
 		if ( $this->expire_timestamp ) {
-			if ( $this->expire_timestamp > time() ) {
-				$format = __( 'Expires:', 'expire-users' ) . ' <strong>%1$s @ %2$s</strong>';
+			if ( $this->expire_timestamp > current_time( 'timestamp' ) ) {
+				$format = $args['expires_format'];
 			} else {
-				$format = __( 'Expired:', 'expire-users' ) . ' <strong>%1$s @ %2$s</strong>';
+				$format = $args['expired_format'];
 			}
-			$date = date( 'M d, Y', $this->expire_timestamp );
-			$time = date( 'H:i', $this->expire_timestamp );
+			$date = date( $args['date_format'], $this->expire_timestamp );
 		} else {
-			$format = __( 'Expire:', 'expire-users' ) . ' <strong>' . __( 'never', 'expire-users' ) . '</strong>';
+			$format = $args['never_expire'];
 		}
-		return sprintf( $format, $date, $time );
+		return sprintf( $format, $date );
 	}
-	
+
 	/**
 	 * Set Default To Role
 	 *
@@ -110,7 +117,7 @@ class Expire_User {
 	 * If expire date is set and in past...
 	 */
 	function maybe_expire() {
-		if ( $this->expire_timestamp && time() > $this->expire_timestamp ) {
+		if ( $this->expire_timestamp && current_time( 'timestamp' ) > $this->expire_timestamp ) {
 			$this->expire();
 		}
 	}
@@ -146,7 +153,8 @@ class Expire_User {
 			'default_to_role' => $this->on_expire_default_to_role,
 			'reset_password'  => $this->true_or_false( $this->on_expire_user_reset_password ),
 			'email'           => $this->true_or_false( $this->on_expire_user_email ),
-			'email_admin'     => $this->true_or_false( $this->on_expire_user_email_admin )
+			'email_admin'     => $this->true_or_false( $this->on_expire_user_email_admin ),
+			'remove_expiry'   => $this->true_or_false( $this->on_expire_user_remove_expiry )
 		);
 		$expire_user_expired = is_numeric( $expire_user_date ) ? 'N' : 'Y';
 		
@@ -154,7 +162,7 @@ class Expire_User {
 		update_user_meta( $this->user_id, '_expire_user_date', $expire_user_date );
 		update_user_meta( $this->user_id, '_expire_user_settings', $expire_user_settings );
 		if ( is_numeric( $expire_user_date ) ) {
-			if ( $expire_user_date < time() ) {
+			if ( $expire_user_date < current_time( 'timestamp' ) ) {
 				update_user_meta( $this->user_id, '_expire_user_expired', 'Y' );
 			} else {
 				update_user_meta( $this->user_id, '_expire_user_expired', 'N' );
@@ -204,6 +212,7 @@ class Expire_User {
 		$this->on_expire_user_reset_password = isset( $data['expire_user_reset_password'] ) && $data['expire_user_reset_password'] == 'Y';
 		$this->on_expire_user_email          = isset( $data['expire_user_email'] ) && $data['expire_user_email'] == 'Y';
 		$this->on_expire_user_email_admin    = isset( $data['expire_user_email_admin'] ) && $data['expire_user_email_admin'] == 'Y';
+		$this->on_expire_user_remove_expiry  = isset( $data['expire_user_remove_expiry'] ) && $data['expire_user_remove_expiry'] == 'Y';
 	}
 	
 	/**
@@ -221,5 +230,3 @@ class Expire_User {
 	}
 	
 }
-
-?>
