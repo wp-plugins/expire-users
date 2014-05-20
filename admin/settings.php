@@ -114,7 +114,7 @@ class Expire_User_Settings {
 								<legend class="screen-reader-text"><span><?php _e( 'Expiry Date', 'expire-users' ); ?></span></legend>
 								<label for="expire_user_date_type_never">
 									<input name="expire_users_default_expire_settings[expire_user_date_type]" type="radio" id="expire_user_date_type_never" value="never" <?php checked( 'never', $expire_settings['expire_user_date_type'] ); ?>>
-									<?php _e( 'never', 'expire date type', 'expire-users' ); ?>
+									<?php _e( 'Never', 'expire date type', 'expire-users' ); ?>
 								</label><br>
 								<label for="expire_user_date_type_in">
 									<input name="expire_users_default_expire_settings[expire_user_date_type]" type="radio" id="expire_user_date_type_in" value="in" <?php checked( 'in', $expire_settings['expire_user_date_type'] ); ?>>
@@ -152,20 +152,40 @@ class Expire_User_Settings {
 								<legend class="screen-reader-text"><span><?php _e( 'Expire Actions', 'expire-users' ); ?></span></legend>
 								<label for="expire_user_reset_password">
 									<input name="expire_users_default_expire_settings[expire_user_reset_password]" type="checkbox" id="expire_user_reset_password" value="Y" <?php checked( 'Y', $expire_settings['expire_user_reset_password'] ); ?>>
-									<?php _e( 'replace user\'s password with a randomly generated one', 'expire-users' ); ?>
-								</label><br>
-								<label for="expire_user_email">
-									<input name="expire_users_default_expire_settings[expire_user_email]" type="checkbox" id="expire_user_email" value="Y" <?php checked( 'Y', $expire_settings['expire_user_email'] ); ?>>
-									<?php _e( 'send notification email to user', 'expire-users' ); ?>
-								</label><br>
-								<label for="expire_user_email_admin">
-									<input name="expire_users_default_expire_settings[expire_user_email_admin]" type="checkbox" id="expire_user_email_admin" value="Y" <?php checked( 'Y', $expire_settings['expire_user_email_admin'] ); ?>>
-									<?php _e( 'send notification email to admin', 'expire-users' ); ?>
+									<?php _e( 'Replace user\'s password with a randomly generated one', 'expire-users' ); ?>
 								</label><br>
 								<label for="expire_user_remove_expiry">
 									<input name="expire_users_default_expire_settings[expire_user_remove_expiry]" type="checkbox" id="expire_user_remove_expiry" value="Y" <?php checked( 'Y', $expire_settings['expire_user_remove_expiry'] ); ?>>
-									<?php _e( 'remove expiry details and allow user to continue to login', 'expire-users' ); ?>
+									<?php _e( 'Remove expiry details and allow user to continue to login', 'expire-users' ); ?>
 								</label>
+							</fieldset>
+						</td>
+					</tr>
+					<tr>
+						<th><label><?php _e( 'Email Notifications', 'expire-users' ); ?></label></th>
+						<td>
+							<fieldset>
+								<legend class="screen-reader-text"><span><?php _e( 'Email Notifications', 'expire-users' ); ?></span></legend>
+								<?php
+								$notifications = Expire_User_Notifications_Admin::get_notifications();
+								foreach ( $notifications as $notification ) {
+									$checked = '';
+									$name = $notification['name'];
+									if ( 'expire_users_notification_message' == $name ) {
+										$name = 'expire_user_email';
+										$checked = checked( 'Y', $expire_settings['expire_user_email'], false );
+									} elseif ( 'expire_users_notification_admin_message' == $name ) {
+										$name = 'expire_user_email_admin';
+										$checked = checked( 'Y', $expire_settings['expire_user_email_admin'], false );
+									}
+									?>
+									<label for="<?php echo esc_attr( $name ); ?>" title="<?php echo esc_attr( $notification['description'] ); ?>">
+										<input name="expire_users_default_expire_settings[<?php echo esc_attr( $name ); ?>]" type="checkbox" id="<?php echo esc_attr( $name ); ?>" value="Y"<?php echo $checked; ?> />
+										<?php echo esc_html( $notification['notification'] ); ?>
+									</label><br />
+									<?php
+								}
+								?>
 							</fieldset>
 						</td>
 					</tr>
@@ -175,17 +195,7 @@ class Expire_User_Settings {
 				<p><?php _e( 'These emails are sent if you have checked the checkboxes on a user\'s profile.', 'expire-users' ); ?><br />
 					<?php _e( 'You may use the following placeholders in the notification email messages below:', 'expire-users' ); ?></p>
 				<p><code>%%expirydate%%</code> <code>%%username%%</code> <code>%%name%%</code> <code>%%sitename%%</code></p>
-
-				<table class="form-table">
-					<tr valign="top">
-						<th scope="row"><label for="expire_users_notification_message"><?php _e( 'User Notification Email', 'expire-users' ); ?></label></th>
-						<td><p><textarea id="expire_users_notification_message" name="expire_users_notification_message" rows="5" cols="50" class="large-text code"><?php echo $notification_message; ?></textarea></p></td>
-					</tr>
-					<tr valign="top">
-						<th scope="row"><label for="expire_users_notification_admin_message"><?php _e( 'Admin Notification Email', 'expire-users' ); ?></label></th>
-						<td><p><textarea id="expire_users_notification_admin_message" name="expire_users_notification_admin_message" rows="5" cols="50" class="large-text code"><?php echo $notification_admin_message; ?></textarea></p></td>
-					</tr>
-				</table>
+				<?php Expire_User_Notifications_Admin::admin_table(); ?>
 
 				<p class="submit"><input type="submit" value="<?php _e( 'Save Options' ); ?>" class="button-primary" /></p>
 

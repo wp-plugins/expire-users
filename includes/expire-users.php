@@ -130,7 +130,7 @@ class Expire_Users {
 		$u = new WP_User( $expired_user->user_id );
 		$message = str_replace( '%%name%%', $this->get_user_display_name( $u ), $message );
 		$message = str_replace( '%%username%%', $u->user_login, $message );
-		$message = str_replace( '%%expirydate%%', date( 'jS F Y @ h:i', $expired_user->expire_timestamp ), $message );
+		$message = str_replace( '%%expirydate%%', date_i18n( get_option( 'date_format' ) . ' @ ' . get_option( 'time_format' ), $expired_user->expire_timestamp ), $message );
 		$message = str_replace( '%%sitename%%', get_bloginfo( 'name' ), $message );
 		return $message;
 	}
@@ -175,12 +175,12 @@ class Expire_Users {
 	function authenticate( $user, $username, $password ) {
 		$checkuser = get_user_by( 'login', $username );
 		if ( $checkuser ) {
-			$expired = get_user_meta( $checkuser->ID, '_expire_user_expired', true );
-			if ( $expired != 'Y' ) {
-				$u = new Expire_User( $checkuser->ID );
-				$expired = $u->maybe_expire() ? 'Y' : 'N';
+			$u = new Expire_User( $checkuser->ID );
+			$expired = $u->is_expired();
+			if ( ! $expired ) {
+				$expired = $u->maybe_expire();
 			}
-			if ( $expired == 'Y' ) {
+			if ( $expired ) {
 				remove_action( 'authenticate', 'wp_authenticate_username_password', 20 );
 				return new WP_Error( 'expire_users_expired', __( '<strong>ERROR</strong>: Your user details have expired.', 'expire-users' ) );
 			}
@@ -193,8 +193,8 @@ class Expire_Users {
 	 */
 	function allow_password_reset( $allow, $user_ID ) {
 		if ( absint( $user_ID ) > 0 ) {
-			$expired = get_user_meta( $user_ID, '_expire_user_expired', true );
-			if ( $expired == 'Y' ) {
+			$u = new Expire_User( $checkuser->ID );
+			if ( $u->is_expired() ) {
 				$allow = new WP_Error( 'expire_users_expired_password_reset', __( '<strong>ERROR</strong>: Your user details have expired so you are no longer able to reset your password.', 'expire-users' ) );
 			}
 		}

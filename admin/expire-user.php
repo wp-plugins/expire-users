@@ -45,13 +45,13 @@ class Expire_User_Admin {
 		$user = get_userdata( $user_id );
 		$value = '';
 		if ( 'expire_user' == $column_name ) {
+			$u = new Expire_User( $user_id );
 			$expire_date = get_user_meta( $user_id, '_expire_user_date', true );
-			$expired = get_user_meta( $user_id, '_expire_user_expired', true );
-			if ( $expired ) {
-				$value = date( get_option( 'date_format' ) . ' @ ' . get_option( 'time_format' ), $expire_date );
-				if ( $expired == 'Y' ) {
-					$value = date( get_option( 'date_format' ), $expire_date );
-					$value = '<strong>' . $value . '</strong> <em>' . __( '(expired)', 'expire-users' ) . '</em>';
+			if ( $expire_date ) {
+				$value = date_i18n( get_option( 'date_format' ) . ' @ ' . get_option( 'time_format' ), $expire_date );
+				if ( $u->is_expired() ) {
+					$value = date_i18n( get_option( 'date_format' ), $expire_date );
+					$value = '<span class="expire-user-expired"><strong>' . $value . '</strong> <em>' . __( '(expired)', 'expire-users' ) . '</em></span>';
 				}
 			}
 		}
@@ -131,7 +131,7 @@ class Expire_User_Admin {
 							<legend class="screen-reader-text"><span><?php _e( 'Expiry Date', 'expire-users' ); ?></span></legend>
 							<label for="expire_user_date_type_never">
 								<input name="expire_user_date_type" type="radio" id="expire_user_date_type_never" value="never" <?php echo $radio_never; ?>>
-								<?php _e( 'never', 'expire-users' ); ?>
+								<?php _e( 'Never', 'expire-users' ); ?>
 							</label><br />
 							<label for="expire_user_date_type_in">
 								<input name="expire_user_date_type" type="radio" id="expire_user_date_type_in" value="in">
@@ -168,30 +168,51 @@ class Expire_User_Admin {
 					</td>
 				</tr>
 				<tr>
-					<th><label for="postalcode"><?php _e( 'Expire Actions', 'expire-users' ); ?></label></th>
+					<th><label><?php _e( 'Expire Actions', 'expire-users' ); ?></label></th>
 					<td>
 						<fieldset>
 							<legend class="screen-reader-text"><span><?php _e( 'Expire Actions', 'expire-users' ); ?></span></legend>
 							<label for="expire_user_reset_password">
 								<input name="expire_user_reset_password" type="checkbox" id="expire_user_reset_password" value="Y" <?php checked( $expire_user->on_expire_user_reset_password ); ?>>
-								<?php _e( 'replace user\'s password with a randomly generated one', 'expire-users' ); ?></a>
-							</label><br>
-							<label for="expire_user_email">
-								<input name="expire_user_email" type="checkbox" id="expire_user_email" value="Y" <?php checked( $expire_user->on_expire_user_email ); ?>>
-								<?php _e( 'send notification email to user', 'expire-users' ); ?> - <a href="<?php echo admin_url( 'users.php?page=expire_users' ); ?>"><?php _e( 'configure message', 'expire-users' ); ?></a>
-							</label><br>
-							<label for="expire_user_email_admin">
-								<input name="expire_user_email_admin" type="checkbox" id="expire_user_email_admin" value="Y" <?php checked( $expire_user->on_expire_user_email_admin ); ?>>
-								<?php _e( 'send notification email to admin', 'expire-users' ); ?> - <a href="<?php echo admin_url( 'users.php?page=expire_users' ); ?>"><?php _e( 'configure message', 'expire-users' ); ?></a>
+								<?php _e( 'Replace user\'s password with a randomly generated one', 'expire-users' ); ?></a>
 							</label><br>
 							<label for="expire_user_remove_expiry">
 								<input name="expire_user_remove_expiry" type="checkbox" id="expire_user_remove_expiry" value="Y" <?php checked( $expire_user->on_expire_user_remove_expiry ); ?>>
-								<?php _e( 'remove expiry details and allow user to continue to login', 'expire-users' ); ?>
+								<?php _e( 'Remove expiry details and allow user to continue to login', 'expire-users' ); ?>
 							</label>
 						</fieldset>
 					</td>
 				</tr>
-				<?php } ?>
+				<tr>
+					<th><label><?php _e( 'Email Notifications', 'expire-users' ); ?></label></th>
+					<td>
+						<fieldset>
+							<legend class="screen-reader-text"><span><?php _e( 'Email Notifications', 'expire-users' ); ?></span></legend>
+							<?php
+							$notifications = Expire_User_Notifications_Admin::get_notifications();
+							foreach ( $notifications as $notification ) {
+								$checked = '';
+								$name = $notification['name'];
+								if ( 'expire_users_notification_message' == $name ) {
+									$name = 'expire_user_email';
+									$checked = checked( 1, $expire_user->on_expire_user_email, false );
+								} elseif ( 'expire_users_notification_admin_message' == $name ) {
+									$name = 'expire_user_email_admin';
+									$checked = checked( 1, $expire_user->on_expire_user_email_admin, false );
+								}
+								?>
+								<label for="<?php echo esc_attr( $name ); ?>" title="<?php echo esc_attr( $notification['description'] ); ?>">
+									<input name="<?php echo esc_attr( $name ); ?>" type="checkbox" id="<?php echo esc_attr( $name ); ?>" value="Y"<?php echo $checked; ?> />
+									<?php echo esc_html( $notification['notification'] ); ?>
+								</label><br />
+								<?php
+							}
+							?>
+							<br /><a href="<?php echo admin_url( 'users.php?page=expire_users' ); ?>"><?php _e( 'View and configure messages', 'expire-users' ); ?></a>
+						</fieldset>
+					</td>
+				</tr>
+			<?php } ?>
 		</table>
 		<?php
 	}
@@ -242,11 +263,11 @@ class Expire_User_Admin {
 	 * Admin Print Styles
 	 */
 	function admin_print_styles() {
-		$stylesheet_url = plugins_url( 'css/admin.css', dirname( __FILE__ ) );
-		$stylesheet_file = WP_PLUGIN_DIR . '/expire-users/css/admin.css';
-		if ( file_exists( $stylesheet_file ) ) {
-			wp_register_style( 'css-layouts-admin', $stylesheet_url );
-			wp_enqueue_style( 'css-layouts-admin' );
+		if ( $this->is_admin_screen( array( 'users_page_expire_users', 'user-edit', 'profile', 'users' ) ) ) {
+			if ( file_exists( WP_PLUGIN_DIR . '/expire-users/css/admin.css' ) ) {
+				wp_register_style( 'css-layouts-admin', plugins_url( 'css/admin.css', dirname( __FILE__ ) ) );
+				wp_enqueue_style( 'css-layouts-admin' );
+			}
 		}
 	}
 
@@ -255,11 +276,37 @@ class Expire_User_Admin {
 	 */
 	function admin_enqueue_scripts() {
 		wp_register_script( 'expire-users-admin-user', plugins_url( 'js/admin-user.js', dirname( __FILE__ ) ), array( 'jquery' ), '1.0' );
-		wp_enqueue_script( 'expire-users-admin-user' );
 		wp_localize_script( 'expire-users-admin-user', 'expire_users_admin_user_i18n', array(
 			'cancel' => __( 'Cancel', 'expire-users' ),
 			'edit'   => __( 'Edit', 'expire-users' )
 		) );
+
+		// Only load admin user JavaScript on the pages it may be needed
+		if ( $this->is_admin_screen( array( 'users_page_expire_users', 'user-edit', 'profile', 'users' ) ) ) {
+			wp_enqueue_script( 'expire-users-admin-user' );
+		}
+	}
+
+	/**
+	 * Check if a specific admin screen is being displayed.
+	 *
+	 * @param   string|array  $screen_id  Screen ID or array of IDs.
+	 * @return  boolean
+	 */
+	function is_admin_screen( $screen_id ) {
+		if ( is_admin() && function_exists( 'get_current_screen' ) ) {
+			$screen = get_current_screen();
+			if ( is_array( $screen_id ) ) {
+				foreach ( $screen_id as $id ) {
+					if ( $id == $screen->id ) {
+						return true;
+					}
+				}
+			} elseif ( $screen_id == $screen->id ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

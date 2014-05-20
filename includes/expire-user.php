@@ -91,8 +91,8 @@ class Expire_User {
 		$args = wp_parse_args( $args, array(
 			'date_format'    => _x(  get_option( 'date_format' ) . ' @ ' . get_option( 'time_format' ), 'display date format', 'expire-users' ),
 			'expires_format' => __( 'Expires: <strong>%s</strong>', 'expire-users' ),
-			'expired_format' => __( 'Expired: <strong>%s</strong>', 'expire-users' ),
-			'never_expire'   => __( 'Expire: <strong>never</strong>', 'expire-users' ),
+			'expired_format' => __( 'Expired: <strong class="expire-user-expired">%s</strong>', 'expire-users' ),
+			'never_expire'   => __( 'Expire: <strong>Never</strong>', 'expire-users' ),
 		) );
 		$date = '';
 		if ( $this->expire_timestamp ) {
@@ -101,7 +101,7 @@ class Expire_User {
 			} else {
 				$format = $args['expired_format'];
 			}
-			$date = date( $args['date_format'], $this->expire_timestamp );
+			$date = date_i18n( $args['date_format'], $this->expire_timestamp );
 		} else {
 			$format = $args['never_expire'];
 		}
@@ -137,6 +137,20 @@ class Expire_User {
 	function expire() {
 		update_user_meta( $this->user_id, '_expire_user_expired', 'Y' );
 		do_action( 'expire_users_expired', $this );
+	}
+
+	/**
+	 * Is Expired
+	 *
+	 * @since  0.9
+	 *
+	 * @return  boolean
+	 */
+	function is_expired() {
+		if ( 'Y' == get_user_meta( $this->user_id, '_expire_user_expired', true ) ) {
+			return true;
+		}
+		return false;
 	}
 
 	/**

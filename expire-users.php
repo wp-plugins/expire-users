@@ -4,21 +4,28 @@
 Plugin Name: Expire Users
 Plugin URI: http://wordpress.org/extend/plugins/expire-users/
 Description: Set expiry dates for user logins.
-Version: 0.8
+Version: 0.9
 Author: Ben Huson
 Author URI: http://www.benhuson.co.uk/
-Minimum WordPress Version Required: 3.4
-Tested up to: 3.9
+Minimum WordPress Version Required: 3.5
+Tested up to: 3.9.1
 */
 
-require_once( dirname( __FILE__ ) . '/includes/class-expire-users.php' );
-require_once( dirname( __FILE__ ) . '/includes/class-expire-user.php' );
-require_once( dirname( __FILE__ ) . '/includes/class-expire-users-settings.php' );
-require_once( dirname( __FILE__ ) . '/includes/class-expire-users-cron.php' );
+// Version
+define( 'EXPIRE_USERS_VERSION', '0.9' );
+define( 'EXPIRE_USERS_DB_VERSION', '1' );
+
+// Includes
+require_once( dirname( __FILE__ ) . '/includes/expire-users.php' );
+require_once( dirname( __FILE__ ) . '/includes/expire-user.php' );
+require_once( dirname( __FILE__ ) . '/includes/query.php' );
+require_once( dirname( __FILE__ ) . '/includes/settings.php' );
+require_once( dirname( __FILE__ ) . '/includes/cron.php' );
 require_once( dirname( __FILE__ ) . '/includes/shortcodes.php' );
 require_once( dirname( __FILE__ ) . '/admin/plugin.php' );
 require_once( dirname( __FILE__ ) . '/admin/settings.php' );
-require_once( dirname( __FILE__ ) . '/admin/class-expire-user-admin.php' );
+require_once( dirname( __FILE__ ) . '/admin/expire-user.php' );
+require_once( dirname( __FILE__ ) . '/admin/notifications.php' );
 require_once( dirname( __FILE__ ) . '/admin/help.php' );
 
 // I18n
