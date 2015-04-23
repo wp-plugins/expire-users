@@ -43,10 +43,10 @@ class Expire_User {
 	function set_expire_time_in_future( $amt, $unit = 'days' ) {
 		switch ( $unit ) {
 			case 'days':
-				$this->expire_timestamp = current_time( 'timestamp' ) + ( 60 * 60 * 24 * $amt );
+				$this->expire_timestamp = current_time( 'timestamp' ) + ( DAY_IN_SECONDS * $amt );
 				break;
 			case 'weeks':
-				$this->expire_timestamp = current_time( 'timestamp' ) + ( 60 * 60 * 24 * 7 * $amt );
+				$this->expire_timestamp = current_time( 'timestamp' ) + ( WEEK_IN_SECONDS * $amt );
 				break;
 			case 'months':
 				$date = getdate();
@@ -89,10 +89,10 @@ class Expire_User {
 	 */
 	function get_expire_date_display( $args = null ) {
 		$args = wp_parse_args( $args, array(
-			'date_format'    => _x(  get_option( 'date_format' ) . ' @ ' . get_option( 'time_format' ), 'display date format', 'expire-users' ),
-			'expires_format' => __( 'Expires: <strong>%s</strong>', 'expire-users' ),
-			'expired_format' => __( 'Expired: <strong class="expire-user-expired">%s</strong>', 'expire-users' ),
-			'never_expire'   => __( 'Expire: <strong>Never</strong>', 'expire-users' ),
+			'date_format'    => get_option( 'date_format' ) . ' @ ' . get_option( 'time_format' ),
+			'expires_format' => sprintf( __( 'Expires: %s', 'expire-users' ), '<strong>%s</strong>' ),
+			'expired_format' => sprintf( __( 'Expired: %s', 'expire-users' ), '<strong class="expire-user-expired">%s</strong>' ),
+			'never_expire'   => sprintf( __( 'Expire: %s', 'expire-users' ), sprintf( '<strong>%s</strong>', __( 'Never', 'expire-users' ) ) ),
 		) );
 		$date = '';
 		if ( $this->expire_timestamp ) {
